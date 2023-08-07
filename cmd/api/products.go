@@ -135,7 +135,44 @@ func (app *application) showProductHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (app *application) listProductsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "list all products")
+	var input struct {
+		Name       string
+		Brand      string
+		categories []string
+		Countries  []string
+		Sale_Price []int64
+		data.Filters
+	}
+
+	v := validator.New()
+
+	qs := r.URL.Query()
+
+	input.Name = app.readString(qs, "title", "")
+	input.Brand = app.readString(qs, "instagram", "")
+	input.Countries = app.readCSV(qs, "countries", []string{})
+
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+	input.Filters.SortSafelist = []string{"id", "title", "delivery_time", "-id", "-title", "-delivery_time"}
+
+	if data.ValidateFilters(v, input.Filters); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	shops, metadata, err := app.models.Shops.GetAll(input.Name, false, input.Countries, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"shops": shops, "metadata": metadata}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *application) updateProductHandler(w http.ResponseWriter, r *http.Request) {
