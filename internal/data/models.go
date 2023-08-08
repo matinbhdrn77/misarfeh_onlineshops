@@ -30,6 +30,10 @@ type Models struct {
 		Insert(shopCountry *ShopCountry) error
 		DeleteByShopID(id int64) error
 	}
+	ShopCategory interface {
+		Insert(shopCategory *ShopCategory) error
+		DeleteByShopID(id int64) error
+	}
 	Products interface {
 		Insert(product *Product) error
 		Get(id int64) (*Product, error)
@@ -49,11 +53,12 @@ type Models struct {
 
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Shops:       ShopModel{DB: db},
-		Countries:   CountryModel{DB: db},
-		ShopCountry: ShopCountryModel{DB: db},
-		Products:    ProductModel{DB: db},
-		Categories:  CategoryModel{DB: db},
+		Shops:        ShopModel{DB: db},
+		Countries:    CountryModel{DB: db},
+		ShopCountry:  ShopCountryModel{DB: db},
+		ShopCategory: ShopCategoryModel{DB: db},
+		Products:     ProductModel{DB: db},
+		Categories:   CategoryModel{DB: db},
 	}
 }
 
