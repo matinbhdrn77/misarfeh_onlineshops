@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrDuplicateShopCountry = errors.New("duplicate email")
+	ErrDuplicateShopCountry = errors.New("duplicate shops_countries")
 )
 
 type ShopCountry struct {
