@@ -1,0 +1,1 @@
+ALTER TABLE images ADD CONSTRAINT images_shop_product_id CHECK((product_id IS NULL) <> (shop_id IS NULL));
