@@ -36,6 +36,13 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Create or return countries
+	categories, err := app.models.Categories.GetOrInsert(input.Categories...)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	shop := &data.Shop{
 		Title:        input.Title,
 		Description:  input.Description,
@@ -65,6 +72,19 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 	// Insert ShopCountry
 	for _, country := range countries {
 		shopCountry := &data.ShopCountry{
+			Shop_id:    shop.ID,
+			Country_id: country.ID,
+		}
+		err = app.models.ShopCountry.Insert(shopCountry)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	// Insert ShopCategory
+	for _, category := range categories {
+		shopCategory := &data.ShopCategory{
 			Shop_id:    shop.ID,
 			Country_id: country.ID,
 		}
