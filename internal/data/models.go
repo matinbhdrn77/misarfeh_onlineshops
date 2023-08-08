@@ -47,6 +47,7 @@ type Models struct {
 		// Update(country *Country) error
 		// Delete(id int64) error
 		GetAll(category *Category) ([]*Category, error)
+		GetAllByShopID(id int64) ([]*Category, error)
 		GetOrInsert(categories ...string) ([]*Category, error)
 	}
 }

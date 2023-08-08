@@ -85,10 +85,10 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 	// Insert ShopCategory
 	for _, category := range categories {
 		shopCategory := &data.ShopCategory{
-			Shop_id:    shop.ID,
-			Country_id: country.ID,
+			Shop_id:     shop.ID,
+			Category_id: category.ID,
 		}
-		err = app.models.ShopCountry.Insert(shopCountry)
+		err = app.models.ShopCategory.Insert(shopCategory)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -139,6 +139,23 @@ func (app *application) showShopHandler(w http.ResponseWriter, r *http.Request) 
 		shop.Countries = append(shop.Countries, country.Name)
 	}
 
+	// retrieve list of categories
+	categories, err := app.models.Categories.GetAllByShopID(shop.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+
+	}
+
+	for _, category := range categories {
+		shop.Categories = append(shop.Categories, category.Name)
+	}
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"shop": shop}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -147,10 +164,11 @@ func (app *application) showShopHandler(w http.ResponseWriter, r *http.Request) 
 
 func (app *application) listShopsHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title     string
-		Instagram string
-		Countries []string
-		Verified  bool
+		Title      string
+		Instagram  string
+		Countries  []string
+		Categories []string
+		Verified   bool
 		data.Filters
 	}
 
@@ -161,6 +179,7 @@ func (app *application) listShopsHandler(w http.ResponseWriter, r *http.Request)
 	input.Title = app.readString(qs, "title", "")
 	input.Instagram = app.readString(qs, "instagram", "")
 	input.Countries = app.readCSV(qs, "countries", []string{})
+	input.Categories = app.readCSV(qs, "categories", []string{})
 	input.Verified = app.readBool(qs, "verified", false)
 
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
@@ -218,6 +237,22 @@ func (app *application) updateShopHandler(w http.ResponseWriter, r *http.Request
 
 	for _, country := range countries {
 		shop.Countries = append(shop.Countries, country.Name)
+	}
+
+	// fetch categories for shop
+	categories, err := app.models.Categories.GetAllByShopID(shop.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	for _, category := range categories {
+		shop.Categories = append(shop.Categories, category.Name)
 	}
 
 	var input struct {
@@ -312,6 +347,42 @@ func (app *application) updateShopHandler(w http.ResponseWriter, r *http.Request
 			Country_id: country.ID,
 		}
 		err = app.models.ShopCountry.Insert(shopCountry)
+		if err != nil {
+
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	// Delete all shops_categories row for this shop
+	if len(shop.Categories) != 0 {
+		err = app.models.ShopCategory.DeleteByShopID(shop.ID)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+				return
+			default:
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+		}
+	}
+
+	// Create or return category_id
+	categories, err = app.models.Categories.GetOrInsert(input.Categories...)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Insert ShopCategory
+	for _, category := range categories {
+		shopCategory := &data.ShopCategory{
+			Shop_id:     shop.ID,
+			Category_id: category.ID,
+		}
+		err = app.models.ShopCategory.Insert(shopCategory)
 		if err != nil {
 
 			app.serverErrorResponse(w, r, err)

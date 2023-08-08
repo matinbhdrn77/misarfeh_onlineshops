@@ -107,6 +107,50 @@ func (m CategoryModel) GetOrInsert(names ...string) ([]*Category, error) {
 	return finalCategories, nil
 }
 
+func (m CategoryModel) GetAllByShopID(id int64) ([]*Category, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+		SELECT categories.name 
+		FROM shops_categories
+		JOIN categories ON shops_categories.category_id = categories.id
+		WHERE shop_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	categories := []*Category{}
+
+	for rows.Next() {
+		var category Category
+
+		err := rows.Scan(
+			&category.Name,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		categories = append(categories, &category)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return categories, nil
+}
+
 func (m CategoryModel) Get(id int64) (*Category, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound

@@ -95,8 +95,11 @@ func (m ShopModel) GetAll(title string, verified bool, countries []string, filte
 		FROM shops 
 		FULL OUTER JOIN shops_countries ON shops.id = shops_countries.shop_id 
 		LEFT JOIN countries ON shops_countries.country_id = countries.id
+		FULL OUTER JOIN shops_categories ON shops.id = shops_categories.shop_id 
+		LEFT JOIN categories ON shops_categories.category_id = categories.id
 		WHERE (title ILIKE $1 OR instagram ILIKE $1 OR $1 = '')
-		AND (name = ANY($2) OR $2 = '{}')
+		AND (countries.name = ANY($2) OR $2 = '{}')
+		AND (categories.name = ANY($2) OR $2 = '{}')
 		AND ($3 = false OR verified = $3)
 		GROUP BY shops.id
 		ORDER BY %s %s, id ASC
