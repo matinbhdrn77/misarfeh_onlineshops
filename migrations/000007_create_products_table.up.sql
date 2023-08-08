@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS products (
-    id bigserial,
+    id bigserial PRIMARY KEY,
     shop_id INTEGER REFERENCES shops(id) ON DELETE CASCADE,
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
     country_id INTEGER REFERENCES countries(id) ON DELETE SET NULL,
@@ -9,6 +9,5 @@ CREATE TABLE IF NOT EXISTS products (
     price real,
     sale_price INTEGER NOT NULL,
     off INTEGER NOT NULL DEFAULT 0,
-    brand text NOT NULL,
-    PRIMARY KEY(id,shop_id)
+    brand text NOT NULL
 );
