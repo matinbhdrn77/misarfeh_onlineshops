@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"misarfeh.com/internal/validator"
 )
 
 type Seller struct {
@@ -74,4 +76,9 @@ func (m SellerModel) Update(seller *Seller) error {
 	defer cancel()
 
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&seller.ID)
+}
+
+func ValidateSeller(v *validator.Validator, seller *Seller) {
+	v.Check(len(seller.MeliCode) <= 20, "meli_code", "must not be more than 20 bytes long")
+	v.Check(validator.Matches(seller.MeliCode, validator.MeliCodeRX), "meli_code", "must be a valid meli code")
 }
