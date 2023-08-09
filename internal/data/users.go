@@ -1,6 +1,8 @@
 package data
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"time"
 
@@ -9,10 +11,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	ErrDuplicatePhone = errors.New("duplicate email")
+)
+
 type User struct {
 	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
-	Name      string    `json:"name"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
 	Email     string    `json:"email"`
 	Phone     string    `json:"phone"`
 	Password  password  `json:"-"`
@@ -23,6 +30,103 @@ type User struct {
 type password struct {
 	plaintext *string
 	hash      []byte
+}
+
+type UserModel struct {
+	DB *sql.DB
+}
+
+func (m UserModel) Insert(user *User) error {
+	query := `
+		INSERT INTO users (first_name, last_name, email, password_hash, activated)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, created_at, version`
+
+	args := []interface{}{user.FirstName, user.LastName, user.Email, user.Password.hash, user.Activated}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_phone_key"`:
+			return ErrDuplicatePhone
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m UserModel) GetByEmailPhone(emailPhone string) (*User, error) {
+	query := `
+		SELECT id, created_at, first_name, last_name, email, phone, password_hash, activated, version
+		FROM users
+		WHERE email = $1 OR phone = $1`
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, emailPhone).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.Phone,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+func (m UserModel) Update(user *User) error {
+	query := `
+	UPDATE users
+	SET first_name = $1, last_name = $2, email = $3, password_hash = $4, activated = $5, version = version + 1
+	WHERE id = $6 AND version = $7
+	RETURNING version`
+
+	args := []interface{}{
+		user.FirstName,
+		user.LastName,
+		user.Email,
+		user.Password.hash,
+		user.Activated,
+		user.ID,
+		user.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_phone_key"`:
+			return ErrDuplicatePhone
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 // The Set() method calculates the bcrypt hash of a plaintext password, and stores both
@@ -73,8 +177,11 @@ func ValidatePasswordPlaintext(v *validator.Validator, password string) {
 }
 
 func ValidateUser(v *validator.Validator, user *User) {
-	v.Check(user.Name != "", "name", "must be provided")
-	v.Check(len(user.Name) <= 500, "name", "must not be more than 500 bytes long")
+	v.Check(user.FirstName != "", "first_name", "must be provided")
+	v.Check(len(user.FirstName) <= 500, "first_name", "must not be more than 500 bytes long")
+
+	v.Check(user.LastName != "", "last_name", "must be provided")
+	v.Check(len(user.LastName) <= 500, "last_name", "must not be more than 500 bytes long")
 
 	ValidateEmail(v, user.Email)
 	ValidatePhone(v, user.Phone)
