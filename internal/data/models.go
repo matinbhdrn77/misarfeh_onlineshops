@@ -51,6 +51,11 @@ type Models struct {
 		GetAllByShopID(id int64) ([]*Category, error)
 		GetOrInsert(categories ...string) ([]*Category, error)
 	}
+	Users interface {
+		Insert(user *User) error
+		GetByEmailPhone(emailPhone string) (*User, error)
+		Update(user *User) error
+	}
 }
 
 func NewModels(db *sql.DB) Models {
@@ -61,6 +66,7 @@ func NewModels(db *sql.DB) Models {
 		ShopCategory: ShopCategoryModel{DB: db},
 		Products:     ProductModel{DB: db},
 		Categories:   CategoryModel{DB: db},
+		Users:        UserModel{DB: db},
 	}
 }
 
