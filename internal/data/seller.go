@@ -33,7 +33,7 @@ func (m SellerModel) Insert(seller *Seller) error {
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&seller.ID)
 }
 
-func (m UserModel) Get(id int64) (*Seller, error) {
+func (m SellerModel) Get(id int64) (*Seller, error) {
 	query := `
 		SELECT id, meli_code, meli_cart_url
 		FROM sellers
