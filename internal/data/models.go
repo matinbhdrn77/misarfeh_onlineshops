@@ -56,6 +56,11 @@ type Models struct {
 		GetByEmailPhone(emailPhone string) (*User, error)
 		Update(user *User) error
 	}
+	Sellers interface {
+		Insert(seller *Seller) error
+		Get(id int64) (*Seller, error)
+		Update(seller *Seller) error
+	}
 }
 
 func NewModels(db *sql.DB) Models {
@@ -67,6 +72,7 @@ func NewModels(db *sql.DB) Models {
 		Products:     ProductModel{DB: db},
 		Categories:   CategoryModel{DB: db},
 		Users:        UserModel{DB: db},
+		Sellers:      SellerModel{DB: db},
 	}
 }
 
