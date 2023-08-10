@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -23,11 +24,12 @@ type Shop struct {
 	Telegram      string    `json:"telegram,omitempty"`
 	Phone         string    `json:"phone,omitempty"`
 	LogoUrl       string    `json:"logo_url,omitempty"`
-	Verified      bool      `json:"verified,omitempty"`
+	Verified      bool      `json:"verified"`
 	Rating        *float32  `json:"rating,omitempty"`
 	RatingCount   int64     `json:"rating_count,omitempty"`
-	Countries     []string  `json:"countries"`
-	Categories    []string  `json:"categories"`
+	Countries     []string  `json:"countries,omitempty"`
+	Categories    []string  `json:"categories,omitempty"`
+	ImgUrls       []string  `json:"img_urls"`
 	DeliveryTime  int8      `json:"delivery_time"`
 }
 
@@ -91,7 +93,9 @@ type ShopModel struct {
 
 func (m ShopModel) GetAll(title string, verified bool, countries []string, filters Filters) ([]*Shop, Metadata, error) {
 	query := fmt.Sprintf(`
-		SELECT COUNT(*) OVER(), shops.id, created_at, title, year, logo_url, delivery_time
+		SELECT COUNT(*) OVER(), shops.id, created_at, title, year, logo_url, delivery_time, 
+			string_agg(DISTINCT countries.name, ',') AS country_names,
+			string_agg(DISTINCT categories.name, ',') AS category_names
 		FROM shops 
 		FULL OUTER JOIN shops_countries ON shops.id = shops_countries.shop_id 
 		LEFT JOIN countries ON shops_countries.country_id = countries.id
@@ -124,6 +128,8 @@ func (m ShopModel) GetAll(title string, verified bool, countries []string, filte
 
 	for rows.Next() {
 		var shop Shop
+		var country_names string
+		var category_names string
 
 		err := rows.Scan(
 			&totalRecords,
@@ -133,11 +139,16 @@ func (m ShopModel) GetAll(title string, verified bool, countries []string, filte
 			&shop.Year,
 			&shop.LogoUrl,
 			&shop.DeliveryTime,
+			&country_names,
+			&category_names,
 		)
 
 		if err != nil {
 			return nil, Metadata{}, err
 		}
+
+		shop.Countries = strings.Split(country_names, ",")
+		shop.Categories = strings.Split(category_names, ",")
 
 		shops = append(shops, &shop)
 	}
