@@ -54,6 +54,7 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 		Countries:    input.Countries,
 		Categories:   input.Categories,
 		DeliveryTime: input.DeliveryTime,
+		ImgUrls:      input.ImgUrls,
 		LogoUrl:      input.LogoUrl,
 	}
 
@@ -90,6 +91,20 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 			Category_id: category.ID,
 		}
 		err = app.models.ShopCategory.Insert(shopCategory)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	// Insert images
+	for _, url := range shop.ImgUrls {
+		image := &data.Image{
+			Url:    url,
+			ShopID: &shop.ID,
+		}
+
+		err = app.models.Images.Insert(image)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
