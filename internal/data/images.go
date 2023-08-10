@@ -30,3 +30,44 @@ func (m ImageModel) Insert(image *Image) error {
 
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&image.ID)
 }
+
+func (m ImageModel) GetAll(shop_id, product_id int64) ([]*Image, error) {
+	query := `
+		SELECT id, url
+		FROM images
+		WHERE (shop_id = $1 OR $1 = 0)
+		AND (product_id = $2 OR $2 = '')`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, shop_id, product_id)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	images := []*Image{}
+
+	for rows.Next() {
+		var image Image
+
+		err := rows.Scan(
+			&image.ID,
+			&image.Url,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		images = append(images, &image)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return images, nil
+}

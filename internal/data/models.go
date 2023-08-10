@@ -63,6 +63,7 @@ type Models struct {
 	}
 	Images interface {
 		Insert(image *Image) error
+		GetAll(shop_id, product_id int64) ([]*Image, error)
 	}
 }
 
