@@ -20,7 +20,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
-	Email     string    `json:"email"`
+	Email     string    `json:"email,omitempty"`
 	Phone     string    `json:"phone"`
 	Password  password  `json:"-"`
 	Activated bool      `json:"activated"`
@@ -38,11 +38,11 @@ type UserModel struct {
 
 func (m UserModel) Insert(user *User) error {
 	query := `
-		INSERT INTO users (first_name, last_name, email, password_hash, activated)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO users (first_name, last_name, email, phone, password_hash, activated)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at, version`
 
-	args := []interface{}{user.FirstName, user.LastName, user.Email, user.Password.hash, user.Activated}
+	args := []interface{}{user.FirstName, user.LastName, user.Email, user.Phone, user.Password.hash, user.Activated}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -161,8 +161,7 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 }
 
 func ValidateEmail(v *validator.Validator, email string) {
-	v.Check(email != "", "email", "must be provided")
-	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
+	v.Check(validator.Matches(email, validator.EmailRX) || email == "", "email", "must be a valid email address")
 }
 
 func ValidatePhone(v *validator.Validator, phone string) {

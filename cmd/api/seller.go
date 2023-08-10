@@ -77,8 +77,8 @@ func (app *application) registerSellerHandler(w http.ResponseWriter, r *http.Req
 
 	output := struct {
 		data.User
-		MeliCode    string `json:"meli_code"`
-		MeliCartUrl string `json:"meli_cart_url"`
+		MeliCode    string `json:"meli_code,omitempty"`
+		MeliCartUrl string `json:"meli_cart_url,omitempty"`
 	}{
 		User:        *user,
 		MeliCode:    seller.MeliCode,
