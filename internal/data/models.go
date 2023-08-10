@@ -61,6 +61,9 @@ type Models struct {
 		Get(id int64) (*Seller, error)
 		Update(seller *Seller) error
 	}
+	Images interface {
+		Insert(image *Image) error
+	}
 }
 
 func NewModels(db *sql.DB) Models {
@@ -73,6 +76,7 @@ func NewModels(db *sql.DB) Models {
 		Categories:   CategoryModel{DB: db},
 		Users:        UserModel{DB: db},
 		Sellers:      SellerModel{DB: db},
+		Images:       ImageModel{DB: db},
 	}
 }
 
