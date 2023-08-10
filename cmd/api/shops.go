@@ -20,6 +20,7 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 		Countries    []string `json:"countries"`
 		Categories   []string `json:"categories"`
 		DeliveryTime int8     `json:"delivery_time"`
+		ImgUrls      []string `json:"img_urls"`
 		LogoUrl      string   `json:"logo_url"`
 	}
 
