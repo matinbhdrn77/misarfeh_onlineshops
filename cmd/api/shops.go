@@ -30,20 +30,6 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Create or return countries
-	countries, err := app.models.Countries.GetOrInsert(input.Countries...)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	// Create or return countries
-	categories, err := app.models.Categories.GetOrInsert(input.Categories...)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
 	shop := &data.Shop{
 		Title:        input.Title,
 		Description:  input.Description,
@@ -62,6 +48,20 @@ func (app *application) createShopHandler(w http.ResponseWriter, r *http.Request
 
 	if data.ValidateShop(v, shop); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	// Create or return countries
+	countries, err := app.models.Countries.GetOrInsert(shop.Countries...)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Create or return countries
+	categories, err := app.models.Categories.GetOrInsert(shop.Categories...)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
