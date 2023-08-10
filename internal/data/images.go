@@ -32,6 +32,10 @@ func (m ImageModel) Insert(image *Image) error {
 }
 
 func (m ImageModel) GetAll(shop_id, product_id int64) ([]*Image, error) {
+	if shop_id < 0 || product_id < 0 || (shop_id < 1 && product_id < 1) {
+		return nil, ErrRecordNotFound
+	}
+
 	query := `
 		SELECT id, url
 		FROM images
