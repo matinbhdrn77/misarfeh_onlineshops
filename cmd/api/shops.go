@@ -172,6 +172,23 @@ func (app *application) showShopHandler(w http.ResponseWriter, r *http.Request) 
 		shop.Categories = append(shop.Categories, category.Name)
 	}
 
+	// retrieve list of image_urls
+	images, err := app.models.Images.GetAll(shop.ID, 0)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+
+	}
+
+	for _, image := range images {
+		shop.ImgUrls = append(shop.ImgUrls, image.Url)
+	}
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"shop": shop}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
