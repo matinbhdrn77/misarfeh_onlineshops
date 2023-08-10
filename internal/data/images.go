@@ -40,7 +40,7 @@ func (m ImageModel) GetAll(shop_id, product_id int64) ([]*Image, error) {
 		SELECT id, url
 		FROM images
 		WHERE (shop_id = $1 OR $1 = 0)
-		AND (product_id = $2 OR $2 = '')`
+		AND (product_id = $2 OR $2 = 0)`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
