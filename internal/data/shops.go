@@ -29,7 +29,7 @@ type Shop struct {
 	RatingCount   int64     `json:"rating_count,omitempty"`
 	Countries     []string  `json:"countries,omitempty"`
 	Categories    []string  `json:"categories,omitempty"`
-	ImgUrls       []string  `json:"img_urls"`
+	ImgUrls       []string  `json:"img_urls,omitempty"`
 	DeliveryTime  int8      `json:"delivery_time"`
 }
 
